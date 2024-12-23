@@ -1,4 +1,4 @@
-# OpenSearch Cross-Cluster Replication for Disaster Recovery
+# Automate OpenSearch Cross-Cluster Replication for Resilience with Sceptre and CloudFormation
 
 This project implements a cross-cluster replication setup for OpenSearch domains to enable data replication for high availability and disaster recovery across AWS regions and/or AWS accounts.
 
