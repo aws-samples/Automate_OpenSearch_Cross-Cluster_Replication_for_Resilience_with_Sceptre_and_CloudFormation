@@ -1,0 +1,10 @@
+template:
+  path: crossclustercr.yaml
+  type: file
+parameters:
+  ConnectionAlias: {{ var.opensearchconnalias }}
+  CRLambda: !stack_output es-follower/crossclusterlambda.yaml::CrossClusterSetupArn
+  LocalDomain: !stack_output es-follower/opensearch.yaml::OpenSearchDomainName
+  RemoteAccount: !stack_output es-leader/opensearch.yaml::OpenSearchAccount
+  RemoteDomain: !stack_output es-leader/opensearch.yaml::OpenSearchDomainName
+  RemoteRegion: !stack_output es-leader/opensearch.yaml::OpenSearchRegion

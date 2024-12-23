@@ -1,0 +1,60 @@
+Parameters:
+  NATSubnet: 
+    Type: String
+  LambdaSubnet:
+    Type: String
+  LambdaRouteTable:
+    Type: String
+  PublicRouteTable:
+    Type: String
+  IGW:
+    Type: String
+  NATInstanceSG:
+    Type: String
+  NATAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64
+
+Resources:
+  NATInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref NATAmiId
+      InstanceType: t2.small
+      SubnetId: !Ref NATSubnet
+      SourceDestCheck: False
+      SecurityGroupIds:
+      - !Ref NATInstanceSG
+      Tags:
+      - Key: Name
+        Value: MyNATInstance
+      UserData:
+        'Fn::Base64': !Sub |
+            #!/bin/bash
+
+            sudo yum install iptables-services -y
+            sudo systemctl enable iptables
+            sudo systemctl start iptables
+            sudo bash -c "echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/custom-ip-forwarding.conf"
+            sudo sysctl -p /etc/sysctl.d/custom-ip-forwarding.conf
+            sudo /sbin/iptables -t nat -A POSTROUTING -o `ls /sys/class/net | sed s/lo//` -j MASQUERADE
+            sudo /sbin/iptables -F FORWARD
+            sudo service iptables save
+            sudo /usr/sbin/shutdown -h now
+
+  NATInstanceRoute:
+    Type: AWS::EC2::Route
+    DependsOn: NATInstance
+    Properties:
+      RouteTableId: !Ref LambdaRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      InstanceId: !Ref NATInstance
+  InternetRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref IGW
+Outputs:
+  NATId:
+    Value: !Ref NATInstance

@@ -1,0 +1,5 @@
+template:
+  path: sg.yaml
+  type: file
+parameters:
+  VpcId: !stack_output es-follower/vpc.yaml::VpcId

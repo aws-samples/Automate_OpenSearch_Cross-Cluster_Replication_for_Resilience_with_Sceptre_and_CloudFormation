@@ -1,0 +1,23 @@
+Parameters:
+  CidrBlock:
+    Type: String
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:
+        !Ref CidrBlock
+      EnableDnsHostnames: True
+      EnableDnsSupport: True
+      Tags:
+        - Key: Purpose
+          Value: "OpenSearch Primary Domain Home"
+
+Outputs:
+  VpcId:
+    Value:
+      !Ref VPC
+  CidrBlock:
+    Value:
+      !Ref CidrBlock

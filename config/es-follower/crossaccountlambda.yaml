@@ -1,0 +1,11 @@
+template:
+  path: crossaccountlambda.yaml
+  type: file
+parameters:
+  Version: V1.2
+  LocalOpenSearchDomainArn: !stack_output es-follower/opensearch.yaml::OpenSearchDomainArn
+  RemoteOpenSearchDomainArn: !stack_output es-leader-crossaccount/opensearch.yaml::OpenSearchDomainArn
+  PrivateSubnet: !stack_output es-follower/subnets.yaml::PrivateSubnet4
+  SecurityGroup: !stack_output es-follower/sg.yaml::LambdaSG
+  NATId: !stack_output es-follower/natinstance.yaml::NATId
+  CrossAccountIamRoleArn: !stack_output es-leader-crossaccount/crossaccountiamrole.yaml::CrossAccountIamRoleArn

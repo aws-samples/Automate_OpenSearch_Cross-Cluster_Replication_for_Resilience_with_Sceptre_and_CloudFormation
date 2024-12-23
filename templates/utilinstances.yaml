@@ -1,0 +1,44 @@
+Parameters:
+  NATSubnet: 
+    Type: String
+  LambdaSubnet:
+    Type: String
+  LambdaRouteTable:
+    Type: String
+  PublicRouteTable:
+    Type: String
+  IGW:
+    Type: String
+  NATInstanceSG:
+    Type: String
+
+Resources:
+  NATInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-00b72ef0882eaa3c4
+      InstanceType: t4g.small
+      KeyName: aiaccount-oregon
+      SubnetId: !Ref NATSubnet
+      SourceDestCheck: False
+      SecurityGroupIds:
+      - !Ref NATInstanceSG
+      Tags:
+      - Key: Name
+        Value: MyNATInstance
+  NATInstanceRoute:
+    Type: AWS::EC2::Route
+    DependsOn: NATInstance
+    Properties:
+      RouteTableId: !Ref LambdaRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      InstanceId: !Ref NATInstance
+  InternetRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref IGW
+Outputs:
+  NATId:
+    Value: !Ref NATInstance

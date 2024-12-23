@@ -1,0 +1,7 @@
+followerregion: us-west-2
+followerprofile: follower-account
+leaderregion: us-east-1
+leaderprofile: follower-account
+opensearchuser: admin
+opensearchpw: ch@ngeth1s
+opensearchconnalias: syncingforDR

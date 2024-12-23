@@ -1,0 +1,97 @@
+Parameters:
+  TunnelInstanceSG:
+    Type: String
+  TunnelSubnet:
+    Type: String
+  OpenSearchDomainEndpoint:
+    Type: String
+  ProxyPort:
+    Type: Number
+    Default: 3000
+  TunnelAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64
+
+Resources:
+  ostunnelrole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+  OSTunnelInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Roles:
+        - Ref: ostunnelrole
+  OSTunnelInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            Encrypted: true
+            VolumeSize: 10
+      IamInstanceProfile:
+        Ref: OSTunnelInstanceProfile
+      ImageId: !Ref TunnelAmiId
+      InstanceType: t2.small
+      SecurityGroupIds:
+      - !Ref TunnelInstanceSG
+      SubnetId: !Ref TunnelSubnet
+      Tags:
+        - Key: Deployment
+          Value: opensearchrepl-eastwest
+        - Key: Name
+          Value: opensearchrepl-eastwest-proxy/OSTunnel
+      UserData:
+        'Fn::Base64': !Sub |
+            #!/bin/bash
+
+            #sudo amazon-linux-extras install nginx1
+            sudo yum install -y nginx
+            sudo systemctl enable nginx
+
+            cat > /etc/nginx/conf.d/proxy.conf <<EOF
+            server {
+                listen ${ProxyPort};
+                server_name \$host;
+                rewrite ^/$ http://\$host:${ProxyPort}/_dashboards redirect;
+
+                location ^~ /_dashboards {
+                    proxy_set_header Authorization "";
+                    proxy_pass https://${OpenSearchDomainEndpoint};
+                    proxy_pass_header Authorization;
+                    proxy_cookie_domain ${OpenSearchDomainEndpoint} \$host;
+                    proxy_set_header Accept-Encoding "";
+                    sub_filter_types *;
+                    sub_filter ${OpenSearchDomainEndpoint} \$host;
+                    sub_filter_once off;
+                    proxy_buffer_size 128k;
+                    proxy_buffers 4 256k;
+                    proxy_busy_buffers_size 256k;
+                }
+                location ~ \/(log|sign|error|fav|forgot|change) {
+                    proxy_redirect https://${OpenSearchDomainEndpoint} http://\$host;
+                }
+            }
+            EOF
+
+            sudo systemctl restart nginx
+    DependsOn:
+      - ostunnelrole
+
+Outputs:
+  OSTunnelInstance:
+    Value:
+      !Ref OSTunnelInstance
+  ProxyPort:
+    Value:
+      !Ref ProxyPort

@@ -1,0 +1,96 @@
+Parameters:
+  MyVPCId:
+    Type: String
+  CidrBlockSubPriv1:
+    Type: String
+  CidrBlockSubPriv2:
+    Type: String
+  CidrBlockSubPriv3:
+    Type: String
+  OtherRegionCidrBlock:
+    Type: String
+
+Resources:
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPCId
+      AvailabilityZone: us-east-1a
+      CidrBlock: !Ref CidrBlockSubPriv1
+      MapPublicIpOnLaunch: false     
+  
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPCId
+      AvailabilityZone: us-east-1b
+      CidrBlock: !Ref CidrBlockSubPriv2
+      MapPublicIpOnLaunch: false
+
+  PrivateSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPCId
+      AvailabilityZone: us-east-1c
+      CidrBlock: !Ref CidrBlockSubPriv3
+      MapPublicIpOnLaunch: false
+
+  TransitGateway:
+    Type: AWS::EC2::TransitGateway
+    Properties:
+      Tags:
+      - Key: "Name"
+        Value: "opensearch-tgw"
+  TransitGatewayAttachment:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties:
+      TransitGatewayId: !Ref TransitGateway
+      VpcId: !Ref MyVPCId
+      SubnetIds:
+      - !Ref PrivateSubnet1
+      - !Ref PrivateSubnet2
+      - !Ref PrivateSubnet3
+      Tags:
+        - Key: "Name"
+          Value: "opensearch-tgw-attachment"
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPCId
+      Tags:
+      - Key: "Name"
+        Value: "opensearch-private-rtb"
+  TGWRoute:
+    Type: AWS::EC2::Route
+    DependsOn: TransitGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: !Ref OtherRegionCidrBlock
+      TransitGatewayId: !Ref TransitGateway
+
+  PrivateRTBSubnet1Association:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet1
+  PrivateRTBSubnet2Association:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet2
+  PrivateRTBSubnet3Association:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet3
+
+Outputs:
+  PrivateSubnet1:
+    Value:
+      !Ref PrivateSubnet1
+  PrivateSubnet2:
+    Value:
+      !Ref PrivateSubnet2
+  PrivateSubnet3:
+    Value:
+      !Ref PrivateSubnet3

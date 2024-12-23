@@ -1,0 +1,33 @@
+Parameters:
+  OriginAccount:
+    Type: String
+
+Resources:
+  CrossAccountForExternalLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: crossaccountforlambdaclusterconn
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: !Sub arn:aws:iam::${OriginAccount}:root
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: crossaccount-opensearch-conn-accept
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - es:AcceptInboundConnection
+            Resource: "*"
+      Tags:
+      - Key: Purpose
+        Value: "Allow Access to Other AWS Accounts to Accept AcceptInboundConnection"
+
+
+Outputs:
+  CrossAccountIamRoleArn:
+    Value: !GetAtt CrossAccountForExternalLambdaIamRole.Arn

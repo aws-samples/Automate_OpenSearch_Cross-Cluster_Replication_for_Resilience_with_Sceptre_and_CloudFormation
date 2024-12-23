@@ -1,0 +1,29 @@
+Parameters:
+  ConnectionAlias:
+    Type: String
+  CRLambda:
+    Type: String
+  LocalDomain:
+    Type: String
+  RemoteAccount:
+    Type: String
+  RemoteDomain:
+    Type: String
+  RemoteRegion:
+    Type: String
+
+Resources:
+  CrossClusterControlCR:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ConnectionAlias: !Ref ConnectionAlias
+      ServiceToken: !Ref CRLambda
+      LocalAccount: !Ref AWS::AccountId
+      LocalDomain: !Ref LocalDomain
+      LocalRegion: !Ref AWS::Region
+      RemoteAccount: !Ref RemoteAccount
+      RemoteDomain: !Ref RemoteDomain
+      RemoteRegion: !Ref RemoteRegion
+Outputs:
+  ReturnMsg:
+    Value: !GetAtt CrossClusterControlCR.ReturnMsg

@@ -1,0 +1,100 @@
+Parameters:
+  OpenSearchUsername:
+    Type: String
+  OpenSearchPassword:
+    Type: String
+  OpenSearchSubnet1:
+    Type: String
+  OpenSearchSubnet2:
+    Type: String
+  OpenSearchSubnet3:
+    Type: String
+
+
+
+Resources:
+  OpenSearchServiceDomain:
+    Type: AWS::OpenSearchService::Domain
+    Properties:
+      AccessPolicies:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action: 'es:*'
+            Resource: !Sub arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*/*
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action: es:ESCrossClusterGet
+            Resource: !Sub arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*
+      EngineVersion: 'OpenSearch_2.13'
+      ClusterConfig:
+        InstanceCount: 3
+        InstanceType: m6g.large.search
+        DedicatedMasterEnabled: True
+        DedicatedMasterType: m6g.large.search
+        DedicatedMasterCount: 3
+        MultiAZWithStandbyEnabled: True
+        ZoneAwarenessEnabled: True
+        ZoneAwarenessConfig:
+          AvailabilityZoneCount: 3
+      EBSOptions:
+        EBSEnabled: True
+        VolumeSize: 20
+        VolumeType: 'gp3'
+      AdvancedSecurityOptions:
+        AnonymousAuthEnabled: False
+        Enabled: True
+        InternalUserDatabaseEnabled: True
+        MasterUserOptions:
+          MasterUserName: !Sub ${OpenSearchUsername}
+          MasterUserPassword: !Sub ${OpenSearchPassword} 
+      NodeToNodeEncryptionOptions:
+        Enabled: True
+      EncryptionAtRestOptions:
+        Enabled: True
+        KmsKeyId: alias/aws/es
+      DomainEndpointOptions:
+        EnforceHTTPS: True
+      Tags:
+      - Key: ReplicationRole
+        Value: None
+
+      VPCOptions:
+        SubnetIds:
+          - !Ref OpenSearchSubnet1
+          - !Ref OpenSearchSubnet2
+          - !Ref OpenSearchSubnet3
+
+Outputs:
+  OpenSearchDomainEndpoint:
+    Description: OpenSearch domain endpoint
+    Value:
+      'Fn::GetAtt':
+        - OpenSearchServiceDomain
+        - DomainEndpoint
+
+  OpenSearchDomainArn:
+    Description: OpenSearch domain ARN
+    Value:
+      'Fn::GetAtt':
+        - OpenSearchServiceDomain
+        - Arn
+
+  OpenSearchDomainName:
+    Description: OpenSearch domain name
+    Value:
+      !Ref OpenSearchServiceDomain
+
+  OpenSearchAccount:
+    Description: AWS Account of this OpenSearch Cluster
+    Value:
+      !Ref AWS::AccountId
+
+  OpenSearchRegion:
+    Description: AWS Region of this OpenSearch Cluster
+    Value:
+      !Ref AWS::Region
+

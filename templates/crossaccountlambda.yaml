@@ -1,0 +1,107 @@
+Parameters:
+  LocalOpenSearchDomainArn:
+    Type: String
+  RemoteOpenSearchDomainArn:
+    Type: String
+  Version:
+    Type: String
+  PrivateSubnet:
+    Type: String
+  SecurityGroup:
+    Type: String
+  NATId:
+    Type: String
+  CrossAccountIamRoleArn:
+    Type: String
+
+Resources:
+
+
+  LambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/crossaccountclusterconn
+
+  IamRoleLambdaExecution:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: crossaccountclusterconn-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaENIManagementAccess
+      Policies:
+      - PolicyName: crossaccountcluster-log-policy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogStream
+            - logs:CreateLogGroup
+            - logs:PutLogEvents
+            Resource:
+            - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/crossaccountclusterconn*:*"
+      - PolicyName: crossaccountcluster-opensearch-conn-policy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - es:CreateOutboundConnection
+            Resource:
+            - !Ref LocalOpenSearchDomainArn
+            - !Ref RemoteOpenSearchDomainArn
+          - Effect: Allow
+            Action:
+            - es:DescribeOutboundConnections
+            - es:DeleteOutboundConnection
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - ec2:StartInstances
+              - ec2:StopInstances
+            Resource: "*"
+      - PolicyName: crossaccount-opensearch-conn-policy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - sts:AssumeRole
+            Resource:
+            - !Ref CrossAccountIamRoleArn
+
+  CrossClusterSetup:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: crossaccountclusterconn
+      Handler: index.handler
+      Runtime: python3.10
+      Timeout: 600
+      PackageType: Zip
+      Code:
+        S3Bucket: beckstep-openwest2
+        S3Key: crossclusterconn.zip
+      Role: !GetAtt IamRoleLambdaExecution.Arn
+      Environment:
+        Variables:
+          NATId: !Ref NATId
+          CrossAccountIamRoleArn: !Ref CrossAccountIamRoleArn
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet
+
+
+Outputs:
+  CrossClusterSetupArn:
+    Value: !GetAtt CrossClusterSetup.Arn

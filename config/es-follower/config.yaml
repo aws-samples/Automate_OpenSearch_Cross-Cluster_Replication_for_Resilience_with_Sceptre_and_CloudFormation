@@ -1,0 +1,3 @@
+project_code: es-follower
+region: {{ var.followerregion }}
+profile: {{ var.followerprofile }}

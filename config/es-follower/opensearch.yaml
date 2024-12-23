@@ -1,0 +1,9 @@
+template:
+  path: opensearch.yaml
+  type: file
+parameters:
+  OpenSearchUsername: 'admin'
+  OpenSearchPassword: 'L3tM31nN0w!'
+  OpenSearchSubnet1: !stack_output es-follower/subnets.yaml::PrivateSubnet1
+  OpenSearchSubnet2: !stack_output es-follower/subnets.yaml::PrivateSubnet2
+  OpenSearchSubnet3: !stack_output es-follower/subnets.yaml::PrivateSubnet3

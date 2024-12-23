@@ -1,0 +1,12 @@
+template:
+  path: us-west-2/subnets.yaml
+  type: file
+parameters:
+  MyVPCId: !stack_output es-follower/vpc.yaml::VpcId
+  CidrBlockSubPriv1: 10.2.0.0/24
+  CidrBlockSubPriv2: 10.2.2.0/24
+  CidrBlockSubPriv3: 10.2.4.0/24
+  CidrBlockSubPriv4: 10.2.6.0/24
+  CidrBlockSubPub1: 10.2.1.0/24
+  OtherRegionCidrBlock: !stack_output es-leader/vpc.yaml::CidrBlock
+  EC2EndpointSG: !stack_output es-follower/sg.yaml::EC2EndpointSG

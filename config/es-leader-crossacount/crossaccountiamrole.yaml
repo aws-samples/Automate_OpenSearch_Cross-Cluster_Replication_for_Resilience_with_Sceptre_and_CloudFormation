@@ -1,0 +1,5 @@
+template:
+  path: crossaccountiamrole.yaml
+  type: file
+parameters:
+  OriginAccount: !stack_output us-west-2/vpc.yaml::OriginAccount

@@ -1,0 +1,96 @@
+Parameters:
+  LocalOpenSearchDomainArn:
+    Type: String
+  RemoteOpenSearchDomainArn:
+    Type: String
+  Version:
+    Type: String
+  PrivateSubnet:
+    Type: String
+  SecurityGroup:
+    Type: String
+  NATId:
+    Type: String
+
+Resources:
+
+
+  LambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/crossclusterconn
+
+  IamRoleLambdaExecution:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: crossclusterconn-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaENIManagementAccess
+      Policies:
+      - PolicyName: crosscluster-log-policy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogStream
+            - logs:CreateLogGroup
+            - logs:PutLogEvents
+            Resource:
+            - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/crossclusterconn*:*"
+      - PolicyName: crosscluster-opensearch-conn-policy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - es:CreateOutboundConnection
+            Resource:
+            - !Ref LocalOpenSearchDomainArn
+            - !Ref RemoteOpenSearchDomainArn
+          - Effect: Allow
+            Action:
+            - es:DescribeOutboundConnections
+            - es:AcceptInboundConnection
+            - es:DeleteOutboundConnection
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - ec2:StartInstances
+              - ec2:StopInstances
+            Resource: "*"
+
+  CrossClusterSetup:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: crossclusterconn
+      Handler: index.handler
+      Runtime: python3.10
+      Timeout: 600
+      PackageType: Zip
+      Code:
+        S3Bucket: <bucketinthisregion>
+        S3Key: crossclusterconn.zip
+      Role: !GetAtt IamRoleLambdaExecution.Arn
+      Environment:
+        Variables:
+          NATId: !Ref NATId
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet
+
+
+Outputs:
+  CrossClusterSetupArn:
+    Value: !GetAtt CrossClusterSetup.Arn

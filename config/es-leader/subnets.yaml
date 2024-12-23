@@ -1,0 +1,9 @@
+template:
+  path: us-east-1/subnets.yaml
+  type: file
+parameters:
+  MyVPCId: !stack_output es-leader/vpc.yaml::VpcId
+  CidrBlockSubPriv1: 10.1.0.0/24
+  CidrBlockSubPriv2: 10.1.2.0/24
+  CidrBlockSubPriv3: 10.1.4.0/24
+  OtherRegionCidrBlock: 10.2.0.0/20

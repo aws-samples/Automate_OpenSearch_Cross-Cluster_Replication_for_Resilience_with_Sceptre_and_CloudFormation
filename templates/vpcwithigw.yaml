@@ -1,0 +1,37 @@
+Parameters:
+  CidrBlock:
+    Type: String
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:
+        !Ref CidrBlock
+      EnableDnsHostnames: True
+      EnableDnsSupport: True
+  IGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: "Name"
+          Value: "LambdaEgress"
+        - Key: "Purpose"
+          Value: "Provide Access using NAT Instance for Lambda VPC Access to Internet"
+  LambdaUseVPCAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref IGW
+      VpcId: !Ref VPC
+
+
+Outputs:
+  VpcId:
+    Value:
+      !Ref VPC
+  IGWId:
+    Value:
+      !Ref IGW
+  OriginAccount:
+    Value:
+      !Ref "AWS::AccountId"

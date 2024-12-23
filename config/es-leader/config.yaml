@@ -1,0 +1,3 @@
+project_code: es-leader
+region: {{ var.leaderregion }}
+profile: {{ var.leaderprofile }}

@@ -1,0 +1,125 @@
+Parameters:
+  VpcId:
+    Type: String
+
+Resources:
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security Group for Lambda"
+      GroupName: "DummySGLambda"
+      VpcId: !Ref VpcId
+  LambdaSGAllowToNATSG:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: "Permit Lambda Traffic going to NAT Instance"
+      GroupId: !Ref LambdaSecurityGroup
+      DestinationSecurityGroupId: !Ref NATInstanceSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443 
+  NATInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security Group for EC2 NAT Instance"
+      GroupName: "NATInstanceSecurityGroup"
+      VpcId: !Ref VpcId
+  NATSGAllowFromLambdaSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: "Accept Traffic Coming from Lambda in VPC"
+      GroupId: !Ref NATInstanceSecurityGroup
+      SourceSecurityGroupId: !Ref LambdaSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443 
+  TunnelInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security Group for EC2 Tunnel Instance"
+      GroupName: "TunnelInstanceSecurityGroup"
+      VpcId: !Ref VpcId
+  NATSGAllowFromTunnelSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: "Accept Traffic Coming from Tunnel Instance"
+      GroupId: !Ref NATInstanceSecurityGroup
+      SourceSecurityGroupId: !Ref TunnelInstanceSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+  TunnelSGAllowToNATSG:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: "Permit Tunnel Instance Traffic going to NAT Instance"
+      GroupId: !Ref TunnelInstanceSecurityGroup
+      DestinationSecurityGroupId: !Ref NATInstanceSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443  
+
+  EC2EndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security Group for EC2 Endpoint"
+      GroupName: "EC2EndpointSG"
+      VpcId: !Ref VpcId
+  EC2EndpointSGAllowLambdaSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: "Accept Traffic from Lambda to EC2 Endpoint"
+      GroupId: !Ref EC2EndpointSecurityGroup
+      SourceSecurityGroupId: !Ref LambdaSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+  EC2EndpointSGSelfAllowAllIn:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: "Allow All Traffic from within the EC2 Endpoint SG"
+      GroupId: !Ref EC2EndpointSecurityGroup
+      SourceSecurityGroupId: !Ref EC2EndpointSecurityGroup
+      IpProtocol: -1
+  EC2EndpointSGSelfAllowAllOut:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: "Permit Outbound Traffic within the EC2 Endpoint SG"
+      GroupId: !Ref EC2EndpointSecurityGroup
+      DestinationSecurityGroupId: !Ref EC2EndpointSecurityGroup
+      IpProtocol: -1
+  NATSGSelfAllowAllIn:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: "Allow All Traffic from within the NAT SG"
+      GroupId: !Ref NATInstanceSecurityGroup
+      SourceSecurityGroupId: !Ref NATInstanceSecurityGroup
+      IpProtocol: -1
+  NATSGSelfAllowAllOut:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: "Permit Outbound Traffic within the NAT SG"
+      GroupId: !Ref NATInstanceSecurityGroup
+      DestinationSecurityGroupId: !Ref NATInstanceSecurityGroup
+      IpProtocol: -1
+  NATSGAllowInternetOutbound:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: "Permit Outbound Traffic from NAT to the Internet"
+      GroupId: !Ref NATInstanceSecurityGroup
+      CidrIp: "0.0.0.0/0"
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+Outputs:
+  LambdaSG:
+    Value:
+      !Ref LambdaSecurityGroup
+  EC2EndpointSG:
+    Value:
+      !Ref EC2EndpointSecurityGroup
+  NATInstanceSG:
+    Value:
+      !Ref NATInstanceSecurityGroup
+  TunnelInstanceSG:
+    Value:
+      !Ref TunnelInstanceSecurityGroup

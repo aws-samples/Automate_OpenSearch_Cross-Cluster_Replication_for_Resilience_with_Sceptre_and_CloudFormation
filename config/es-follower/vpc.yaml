@@ -1,0 +1,5 @@
+template:
+  path: vpcwithigw.yaml
+  type: file
+parameters:
+  CidrBlock: 10.2.0.0/20

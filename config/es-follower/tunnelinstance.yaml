@@ -1,0 +1,7 @@
+template:
+  path: tunnelinstance.yaml
+  type: file
+parameters:
+  TunnelSubnet: !stack_output es-follower/subnets.yaml::PrivateSubnet4
+  TunnelInstanceSG: !stack_output es-follower/sg.yaml::TunnelInstanceSG
+  OpenSearchDomainEndpoint: !stack_output es-follower/opensearch.yaml::OpenSearchDomainEndpoint

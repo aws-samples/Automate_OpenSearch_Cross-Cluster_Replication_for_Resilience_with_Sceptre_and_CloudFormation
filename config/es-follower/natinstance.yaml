@@ -1,0 +1,10 @@
+template:
+  path: natinstance.yaml
+  type: file
+parameters:
+  NATSubnet: !stack_output es-follower/subnets.yaml::PublicSubnet1
+  LambdaSubnet: !stack_output es-follower/subnets.yaml::PrivateSubnet4
+  LambdaRouteTable: !stack_output es-follower/subnets.yaml::LambdaRouteTable
+  PublicRouteTable: !stack_output es-follower/subnets.yaml::PublicRTB
+  IGW: !stack_output es-follower/vpc.yaml::IGWId
+  NATInstanceSG: !stack_output es-follower/sg.yaml::NATInstanceSG
